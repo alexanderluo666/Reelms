@@ -60,7 +60,6 @@ int main() {
 
     float shakeTime = 0;
 
-    // upgrade choice system
     UpgradeType choices[3];
 
     Camera2D cam = {0};
@@ -82,12 +81,13 @@ int main() {
         for (int i = 0; i < count; i++) {
             Enemy e;
             e.pos = {(float)GetRandomValue(0,800),(float)GetRandomValue(0,600)};
-            e.type = GetRandomValue(0,100) < 70 ? 0 : (GetRandomValue(0,1) ? 1 : 2);
 
-            if (e.type == 0) e.speed = 80;
-            if (e.type == 1) e.speed = 140;
-            if (e.type == 2) e.speed = 50;
+            int r = GetRandomValue(0,100);
+            if (r < 60) e.type = 0;
+            else if (r < 85) e.type = 1;
+            else e.type = 2;
 
+            e.speed = (e.type == 1) ? 140 : (e.type == 2 ? 50 : 80);
             e.radius = (e.type == 2) ? 16 : 10;
             e.alive = true;
 
@@ -99,9 +99,8 @@ int main() {
     };
 
     auto RollUpgrades = [&]() {
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 3; i++)
             choices[i] = (UpgradeType)GetRandomValue(0,2);
-        }
     };
 
     while (!WindowShouldClose()) {
@@ -118,12 +117,10 @@ int main() {
 
         else if (state == PLAYING) {
 
-            // spawn waves
-            if (enemiesAlive == 0) {
+            if (enemiesAlive == 0)
                 SpawnWave();
-            }
 
-            // player movement
+            // PLAYER MOVEMENT
             Vector2 dir = {0,0};
             if (IsKeyDown(KEY_W)) dir.y -= 1;
             if (IsKeyDown(KEY_S)) dir.y += 1;
@@ -137,7 +134,7 @@ int main() {
                 player.pos.y += dir.y * player.speed * dt;
             }
 
-            // shooting
+            // SHOOT
             player.fireCooldown -= dt;
             if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && player.fireCooldown <= 0) {
                 player.fireCooldown = player.fireRate;
@@ -156,7 +153,7 @@ int main() {
                 }
             }
 
-            // enemies
+            // ENEMIES
             for (auto &e : enemies) {
                 if (!e.alive) continue;
 
@@ -171,19 +168,18 @@ int main() {
                     player.hp--;
                     e.alive = false;
                     enemiesAlive--;
-                    shakeTime = 0.2f;
+                    shakeTime = 0.25f;
                 }
             }
 
-            // lasers
+            // LASERS
             for (auto &l : lasers) {
                 if (!l.alive) continue;
-
                 l.pos.x += l.dir.x * l.speed * dt;
                 l.pos.y += l.dir.y * l.speed * dt;
             }
 
-            // collisions
+            // COLLISIONS
             for (auto &l : lasers) {
                 if (!l.alive) continue;
 
@@ -195,57 +191,41 @@ int main() {
                         e.alive = false;
                         enemiesAlive--;
                         killCount++;
-                        shakeTime = 0.1f;
+                        shakeTime = 0.12f;
 
                         for (int i=0;i<8;i++) {
-                            particles.push_back({e.pos,
-                                {(float)GetRandomValue(-100,100),
-                                 (float)GetRandomValue(-100,100)},
-                                0.4f});
+                            particles.push_back({
+                                e.pos,
+                                {(float)GetRandomValue(-120,120),(float)GetRandomValue(-120,120)},
+                                0.4f
+                            });
                         }
                     }
                 }
             }
 
-            // upgrade trigger
+            // UPGRADE TRIGGER
             if (killCount > 0 && killCount % 10 == 0) {
                 RollUpgrades();
                 state = UPGRADE;
                 killCount++;
             }
 
-            if (player.hp <= 0) state = GAME_OVER;
+            if (player.hp <= 0)
+                state = GAME_OVER;
         }
 
         else if (state == UPGRADE) {
-
-            if (IsKeyPressed(KEY_ONE)) {
-                if (choices[0] == FIRE_RATE) player.fireRate *= 0.85f;
-                if (choices[0] == MULTISHOT) player.multiShot++;
-                if (choices[0] == SPEED) player.speed += 20;
-                state = PLAYING;
-            }
-
-            if (IsKeyPressed(KEY_TWO)) {
-                if (choices[1] == FIRE_RATE) player.fireRate *= 0.85f;
-                if (choices[1] == MULTISHOT) player.multiShot++;
-                if (choices[1] == SPEED) player.speed += 20;
-                state = PLAYING;
-            }
-
-            if (IsKeyPressed(KEY_THREE)) {
-                if (choices[2] == FIRE_RATE) player.fireRate *= 0.85f;
-                if (choices[2] == MULTISHOT) player.multiShot++;
-                if (choices[2] == SPEED) player.speed += 20;
-                state = PLAYING;
-            }
+            if (IsKeyPressed(KEY_ONE)) state = PLAYING;
+            if (IsKeyPressed(KEY_TWO)) state = PLAYING;
+            if (IsKeyPressed(KEY_THREE)) state = PLAYING;
         }
 
         else if (state == GAME_OVER) {
             if (IsKeyPressed(KEY_ENTER)) state = MENU;
         }
 
-        // particles
+        // PARTICLES
         for (auto &p : particles) {
             p.pos.x += p.vel.x * dt;
             p.pos.y += p.vel.y * dt;
@@ -267,15 +247,25 @@ int main() {
 
         Vector2 shake = {0,0};
         if (shakeTime > 0) {
-            shake = {(float)GetRandomValue(-5,5),(float)GetRandomValue(-5,5)};
+            shake = {(float)GetRandomValue(-6,6),(float)GetRandomValue(-6,6)};
             shakeTime -= dt;
         }
 
-        ClearBackground(BLACK);
+        // 🌌 BACKGROUND
+        DrawRectangleGradientV(0,0,800,600,
+            Color{10,10,20,255},
+            Color{5,5,10,255});
+
+        // GRID
+        for (int x=0;x<800;x+=40)
+            DrawLine(x,0,x,600,Color{30,30,40,40});
+
+        for (int y=0;y<600;y+=40)
+            DrawLine(0,y,800,y,Color{30,30,40,40});
 
         if (state == MENU) {
             DrawText("REELMS: RIFTFALL", 200,200,40,WHITE);
-            DrawText("ENTER TO START", 280,300,20,GRAY);
+            DrawText("ENTER", 350,300,20,GRAY);
         }
 
         else if (state == PLAYING) {
@@ -285,32 +275,37 @@ int main() {
 
             BeginMode2D(cam);
 
-            DrawCircleV(player.pos, player.radius, GREEN);
+            // PLAYER
+            DrawCircleV(player.pos, player.radius, Color{80,255,120,255});
+            DrawCircleLines(player.pos.x, player.pos.y, player.radius+3, WHITE);
 
-            for (auto &e : enemies)
-                DrawCircleV(e.pos, e.radius,
-                    e.type==0?RED:(e.type==1?BLUE:ORANGE));
+            // ENEMIES
+            for (auto &e : enemies) {
+                Color c = (e.type==0)?RED:(e.type==1?BLUE:ORANGE);
+                DrawCircleV(e.pos, e.radius, c);
+                DrawCircleLines(e.pos.x,e.pos.y,e.radius+2,BLACK);
+            }
 
-            for (auto &l : lasers)
+            // LASERS
+            for (auto &l : lasers) {
                 DrawCircleV(l.pos, l.radius, YELLOW);
+                DrawCircleLines(l.pos.x,l.pos.y,l.radius+2,WHITE);
+            }
 
+            // PARTICLES
             for (auto &p : particles)
                 DrawCircleV(p.pos, 2, WHITE);
 
             EndMode2D();
 
-            DrawText(TextFormat("HP:%d", player.hp), 10,10,20,WHITE);
-            DrawText(TextFormat("WAVE:%d", wave), 10,40,20,WHITE);
+            DrawText(TextFormat("HP: %d", player.hp), 10,10,20,WHITE);
+            DrawText(TextFormat("WAVE: %d", wave), 10,40,20,WHITE);
         }
 
         else if (state == UPGRADE) {
-            DrawText("UPGRADE!", 320,100,40,YELLOW);
-
-            DrawText("1", 200,250,30,WHITE);
-            DrawText("2", 350,250,30,WHITE);
-            DrawText("3", 500,250,30,WHITE);
-
-            DrawText("Press 1/2/3", 300,400,20,GRAY);
+            DrawText("UPGRADE!", 320,120,40,YELLOW);
+            DrawText("1  2  3", 340,250,30,WHITE);
+            DrawText("Choose quickly", 300,350,20,GRAY);
         }
 
         else if (state == GAME_OVER) {
