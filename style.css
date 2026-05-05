@@ -1,14 +1,13 @@
 body {
     margin: 0;
     background: radial-gradient(circle at center, #0a0a0a, #000000);
-    color: white;
-    font-family: Arial, sans-serif;
     overflow: hidden;
+    font-family: Arial, sans-serif;
 }
 
 canvas {
     display: block;
     margin: auto;
     border: 2px solid #222;
-    box-shadow: 0 0 20px #0ff3;
+    box-shadow: 0 0 20px #00ffcc55;
 }
